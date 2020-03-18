@@ -69,23 +69,15 @@ class Forte(commands.Cog):
 
         print(error)
 
-    @commands.command("xsolla:sync")
-    async def sync(self, ctx):
-        pass
-
-    @commands.group(aliases=["포르테", "ㅍ"])
+    @commands.group(aliases=["포르테", "ㅍ"], brief="포르테 API 관련 명령어가 모아져 있습니다.")
     async def forte(self, ctx):
         pass
 
-    @forte.command(aliases=["사용자"])
+    @forte.command(aliases=["사용자"], brief="포르테 이용자 정보를 확인합니다.")
     async def user(self, ctx, user: ForteUser):
         await ctx.send(embed=ForteUser.to_embed(user))
 
-    @forte.group()
-    async def items(self, ctx):
-        pass
-
-    @forte.command(aliases=["지급"])
+    @forte.command(aliases=["지급"], brief="포르테 이용자에게 포인트를 지급합니다.")
     async def deposit(self, ctx, user: ForteUser, point: int):
         embed = ForteUser.to_embed(user).add_field(
             name="예상 포인트", value=str(user["points"] + point)

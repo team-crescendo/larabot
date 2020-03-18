@@ -13,6 +13,7 @@ isort==4.3.21
 mccabe==0.6.1
 multidict==4.7.5
 pathspec==0.7.0
+psutil==5.7.0
 pycodestyle==2.5.0
 pyflakes==2.1.1
 python-dotenv==0.12.0

@@ -26,7 +26,9 @@ class User(commands.Cog):
 
         print(error)
 
-    @commands.command("출석", aliases=["출석체크", "출첵", "ㅊ"])
+    @commands.command(
+        "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석하고 포인트 보상을 받습니다.",
+    )
     async def attend(self, ctx):
         user, _ = await request("get", f"/discords/{ctx.author.id}")
         if len(user) == 0:
@@ -48,7 +50,9 @@ class User(commands.Cog):
 
         status = attendance.get("status")
         if status == "exist_attendance":
-            return await ctx.send(f"최근에 이미 출석체크 하셨습니다.\n내일 다시 시도해주세요.")
+            return await ctx.send(
+                f"최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."
+            )
 
         FULL = 7
         if status == "success":
@@ -75,7 +79,7 @@ __7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스
 """
             )
 
-    @commands.command("구독")
+    @commands.command("구독", brief="전용 구독자 역할을 지급받거나 반환합니다.")
     async def subscribe(self, ctx):
         role = ctx.guild.get_role(int(os.getenv("SUBSCRIBER_ROLE")))
         if role is None:
