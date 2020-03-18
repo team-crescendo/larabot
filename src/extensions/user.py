@@ -35,7 +35,7 @@ class User(commands.Cog):
         user, _ = await request("get", f"/discords/{ctx.author.id}")
         if len(user) == 0:
             return await ctx.send(
-                """⚠️ 팀 크레센도 FOTRE에 가입하지 않은 계정입니다.
+                f"""{ctx.author.mention}, ⚠️ 팀 크레센도 FOTRE에 가입하지 않은 계정입니다.
 출석체크 및 개근 보상으로 POINT를 지급받기 위해선 FORTE 가입이 필요합니다.
 하단의 링크에서 Discord 계정 연동을 통해 가입해주세요.
 > https://forte.team-crescendo.me/login/discord"""
@@ -50,7 +50,9 @@ class User(commands.Cog):
 
         if attendance.get("error"):
             self.logger.warning(f"failed to check attendance of {ctx.author.id}")
-            return await ctx.send("🔥 에러가 발생했습니다. 잠시 후 다시 시도해주세요.")
+            return await ctx.send(
+                f"{ctx.author.mention}, 🔥 에러가 발생했습니다. 잠시 후 다시 시도해주세요."
+            )
 
         status = attendance.get("status")
         self.logger.info(
@@ -60,14 +62,14 @@ class User(commands.Cog):
         )
         if status == "exist_attendance":
             return await ctx.send(
-                f"최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."
+                f"{ctx.author.mention}, 최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."
             )
 
         FULL = 7
         if status == "success":
             progress = ("❤️" * attendance["stack"]).ljust(FULL, "🖤")
             return await ctx.send(
-                f"""⚡ **출석 체크 완료!**
+                f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
 
 개근까지 앞으로 {FULL - attendance['stack']}일 남았습니다. 내일 또 만나요!
 
@@ -80,7 +82,7 @@ __7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스
         elif status == "regular":
             bonus_description = "(`💎Premium` 보유 보너스 포함)" if is_premium else ""
             return await ctx.send(
-                f"""💝 **출석 성공!**
+                f"""{ctx.author.mention}, 💝 **출석 성공!**
 
 축하드립니다! {FULL}일 누적으로 출석체크에 성공하여 개근 보상을 획득했습니다.
 
@@ -96,10 +98,10 @@ __7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스
 
         if role not in ctx.author.roles:
             await ctx.author.add_roles(role)
-            await ctx.send(f"{ctx.author.mention} 구독자 역할을 지급했습니다.")
+            await ctx.send(f"{ctx.author.mention}, 구독자 역할을 지급했습니다.")
         else:
             await ctx.author.remove_roles(role)
-            await ctx.send(f"{ctx.author.mention} 구독자 역할을 회수했습니다.")
+            await ctx.send(f"{ctx.author.mention}, 구독자 역할을 회수했습니다.")
 
 
 def setup(bot):
