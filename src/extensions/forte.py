@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+import interface
 from api import request
 
 load_dotenv(verbose=True, override=True)
@@ -89,9 +90,20 @@ class Forte(commands.Cog):
         embed = ForteUser.to_embed(user).add_field(
             name="예상 포인트", value=str(user["points"] + point)
         )
-        await ctx.send(content="다음과 같이 포인트를 지급합니다.", embed=embed)
+        message = await ctx.send(content="다음과 같이 포인트를 지급합니다.", embed=embed)
 
-        # TODO POST /points
+        if not await interface.is_confirmed(ctx, message):
+            return await ctx.send(f"{ctx.author.mention} 취소되었습니다.")
+
+        result, resp = await request(
+            "post", f"/users/{user['id']}/points", json={"points": point}
+        )
+        if resp.status // 100 == 4:
+            message = result.get("message", "Unknown Error")
+            return await ctx.send(f"포인트 지급에 실패했습니다: {message}")
+
+        receipt_id = result.get("receipt_id", -1)
+        await ctx.send(f"포인트 지급에 성공했습니다! (영수증 ID: {receipt_id})")
 
 
 def setup(bot):

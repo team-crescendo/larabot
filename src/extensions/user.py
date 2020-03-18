@@ -48,9 +48,7 @@ class User(commands.Cog):
 
         status = attendance.get("status")
         if status == "exist_attendance":
-            return await ctx.send(
-                f"최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 뒤에 다시 시도해주세요."
-            )
+            return await ctx.send(f"최근에 이미 출석체크 하셨습니다.\n내일 다시 시도해주세요.")
 
         FULL = 7
         if status == "success":
