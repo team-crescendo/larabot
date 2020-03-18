@@ -1,3 +1,4 @@
+import logging
 import os
 
 from discord.ext import commands
@@ -12,6 +13,7 @@ class User(commands.Cog):
     guild_whitelist = [
         int(guild_id.strip()) for guild_id in os.getenv("GUILD_WHITELIST").split(",")
     ]
+    logger = logging.getLogger("lara.user")
 
     def __init__(self, bot):
         self.bot = bot
@@ -24,7 +26,7 @@ class User(commands.Cog):
             await ctx.send("⚠️ **팀 크레센도 디스코드**에서만 사용 가능한 명령어입니다.")
             return
 
-        print(error)
+        self.logger.error(str(error))
 
     @commands.command(
         "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석하고 포인트 보상을 받습니다.",
@@ -41,14 +43,21 @@ class User(commands.Cog):
 
         role = ctx.guild.get_role(int(os.getenv("PREMIUM_ROLE")))
         is_premium = int(role in ctx.author.roles)
+
         attendance, _ = await request(
             "post", f"/discords/{ctx.author.id}/attendances?isPremium={is_premium}"
         )
 
         if attendance.get("error"):
+            self.logger.warning(f"failed to check attendance of {ctx.author.id}")
             return await ctx.send("🔥 에러가 발생했습니다. 잠시 후 다시 시도해주세요.")
 
         status = attendance.get("status")
+        self.logger.info(
+            f"attendance check of {ctx.author.id}"
+            + (", premium user" if is_premium else "")
+            + f": {status}"
+        )
         if status == "exist_attendance":
             return await ctx.send(
                 f"최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."

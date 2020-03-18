@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 
@@ -50,6 +51,8 @@ class ForteUser(commands.Converter):
 
 
 class Forte(commands.Cog):
+    logger = logging.getLogger("lara.forte")
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -67,7 +70,7 @@ class Forte(commands.Cog):
         if isinstance(ctx, commands.CheckFailure):
             return
 
-        print(error)
+        self.logger.error(str(error))
 
     @commands.group(aliases=["포르테", "ㅍ"], brief="포르테 API 관련 명령어가 모아져 있습니다.")
     async def forte(self, ctx):
@@ -95,6 +98,9 @@ class Forte(commands.Cog):
             return await ctx.send(f"포인트 지급에 실패했습니다: {message}")
 
         receipt_id = result.get("receipt_id", -1)
+        self.logger.info(
+            f"deposit {point} points to User ID {user['id']} by {ctx.author.id} - Receipt {receipt_id}"
+        )
         await ctx.send(f"포인트 지급에 성공했습니다! (영수증 ID: {receipt_id})")
 
 
