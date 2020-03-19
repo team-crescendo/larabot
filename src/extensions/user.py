@@ -67,7 +67,7 @@ class User(commands.Cog):
 
         FULL = 7
         if status == "success":
-            progress = ("❤️" * attendance["stack"]).ljust(FULL, "🖤")
+            progress = ("❤️" * attendance["stack"]) + ("🖤" * (FULL - attendance["stack"]))
             return await ctx.send(
                 f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
 
