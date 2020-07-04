@@ -56,11 +56,16 @@ class Forte(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        admin_role_env = os.getenv("ADMIN_ROLE")
+        if admin_role_env is None:
+            raise ValueError("Environment variable ADMIN_ROLE is not defined")
+        self.admin_role = int(admin_role_env)
+
     async def cog_check(self, ctx):
         if ctx.guild is None:
             return False
 
-        role = ctx.guild.get_role(int(os.getenv("ADMIN_ROLE")))
+        role = ctx.guild.get_role(self.admin_role)
         if role is None:
             return False
 

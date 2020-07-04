@@ -18,6 +18,16 @@ class User(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        premium_role_env = os.getenv("PREMIUM_ROLE")
+        if premium_role_env is None:
+            raise ValueError("Environment variable PREMIUM_ROLE is not defined")
+        self.premium_role = int(premium_role_env)
+
+        subscriber_role_env = os.getenv("SUBSCRIBER_ROLE")
+        if subscriber_role_env is None:
+            raise ValueError("Environmant variable SUBSCRIBER_ROLE is not defined")
+        self.subscriber_role = int(subscriber_role_env)
+
     async def cog_check(self, ctx):
         return ctx.guild is not None and ctx.guild.id in self.guild_whitelist
 
@@ -41,7 +51,7 @@ class User(commands.Cog):
 > https://forte.team-crescendo.me/login/discord"""
             )
 
-        role = ctx.guild.get_role(int(os.getenv("PREMIUM_ROLE")))
+        role = ctx.guild.get_role(self.premium_role)
         is_premium = int(role in ctx.author.roles)
 
         attendance, _ = await request(
@@ -67,7 +77,9 @@ class User(commands.Cog):
 
         FULL = 7
         if status == "success":
-            progress = ("❤️" * attendance["stack"]) + ("🖤" * (FULL - attendance["stack"]))
+            progress = ("❤️" * attendance["stack"]) + (
+                "🖤" * (FULL - attendance["stack"])
+            )
             return await ctx.send(
                 f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
 
@@ -92,7 +104,7 @@ __7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스
 
     @commands.command("구독", brief="전용 구독자 역할을 지급받거나 반환합니다.")
     async def subscribe(self, ctx):
-        role = ctx.guild.get_role(int(os.getenv("SUBSCRIBER_ROLE")))
+        role = ctx.guild.get_role(self.subscriber_role)
         if role is None:
             return await ctx.send("⚠️ 구독자 역할을 찾을 수 없습니다.")
 
