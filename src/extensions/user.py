@@ -1,12 +1,53 @@
+import json
 import logging
 import os
 
+from discord import Embed
 from discord.ext import commands
 from dotenv import load_dotenv
 
+import api
 from api import request
+import interface
 
 load_dotenv(verbose=True, override=True)
+
+with open("src/resources/box.json", encoding="utf-8") as f:
+    box_types = json.load(f)
+
+
+def describe_box(box: dict, is_premium: bool) -> str:
+    key = box.get("key_premium", box["key"]) if is_premium else box["key"]
+    max_point = max(p["point"] for p in box["probabilities"])
+    return "{emoji} **{name}** (열쇠 {key}개 필요, 최대 {max_point}P)".format(
+        **dict(box, key=key, max_point=max_point)
+    )
+
+
+def box_open_view(box: dict, is_premium: bool, key_count: int) -> Embed:
+    embed = Embed(title=box["name"]).set_thumbnail(url=box["image"])
+
+    # 필요 열쇠량
+    description = f"열쇠 {box['key']}개 필요"
+    if "key_premium" in box.keys():
+        description += f" (프리미엄: {box['key_premium']}개 필요)"
+
+    # 확률 분포
+    description += "\n\n이 상자를 열면..\n"
+    description += "\n".join(
+        [
+            f"{100 * prob['prob']:.0f}%의 확률로 {prob['point']}P 획득"
+            for prob in box["probabilities"]
+        ]
+    )
+
+    # 사용자에게 안내
+    key = box.get("key_premium", box["key"]) if is_premium else box["key"]
+    description += f"\n\n열쇠 {key}개를 사용해서 **{box['name']}**를 열어볼까요?\n"
+    description += f"(현재 열쇠 **{key_count}개**를 가지고 있어요!)"
+
+    embed.description = description
+    return embed
 
 
 class User(commands.Cog):
@@ -38,69 +79,82 @@ class User(commands.Cog):
 
         self.logger.error(str(error))
 
+    def is_premium(self, ctx: commands.Context) -> bool:
+        return ctx.guild.get_role(self.premium_role) in ctx.author.roles
+
     @commands.command(
-        "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석하고 포인트 보상을 받습니다.",
+        "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석하고 열쇠를 얻습니다.",
     )
     async def attend(self, ctx):
         user, _ = await request("get", f"/discords/{ctx.author.id}")
         if len(user) == 0:
             return await ctx.send(
                 f"""{ctx.author.mention}, ⚠️ 팀 크레센도 FOTRE에 가입하지 않은 계정입니다.
-출석체크 및 개근 보상으로 POINT를 지급받기 위해선 FORTE 가입이 필요합니다.
+출석체크 보상으로 POINT를 지급받기 위해선 FORTE 가입이 필요합니다.
 하단의 링크에서 Discord 계정 연동을 통해 가입해주세요.
 > https://forte.team-crescendo.me/login/discord"""
             )
 
-        role = ctx.guild.get_role(self.premium_role)
-        is_premium = int(role in ctx.author.roles)
+        try:
+            key_count = await api.post_attendace(ctx.author.id)
+        except api.AttendanceError as e:
+            self.logger.log(e.level, f"{ctx.author.id} attend failure, {e.status}")
+            return await ctx.send(f"{ctx.author.mention}, {e}")
 
-        attendance, _ = await request(
-            "post", f"/discords/{ctx.author.id}/attendances?isPremium={is_premium}"
-        )
-
-        if attendance.get("error"):
-            self.logger.warning(f"failed to check attendance of {ctx.author.id}")
-            return await ctx.send(
-                f"{ctx.author.mention}, 🔥 에러가 발생했습니다. 잠시 후 다시 시도해주세요."
-            )
-
-        status = attendance.get("status")
-        self.logger.info(
-            f"attendance check of {ctx.author.id}"
-            + (", premium user" if is_premium else "")
-            + f": {status}"
-        )
-        if status == "exist_attendance":
-            return await ctx.send(
-                f"{ctx.author.mention}, 최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."
-            )
-
-        FULL = 7
-        if status == "success":
-            progress = ("❤️" * attendance["stack"]) + (
-                "🖤" * (FULL - attendance["stack"])
-            )
-            return await ctx.send(
-                f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
-
-개근까지 앞으로 {FULL - attendance['stack']}일 남았습니다. 내일 또 만나요!
+        self.logger.info(f"{ctx.author.id} attend success, key_count = {key_count}")
+        progress = key_count * "🔑" + (10 - key_count) * "❔"
+        return await ctx.send(
+            f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
 
 {progress}
 
-__7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스토어)에서 사용할 수 있는 POINT를 지급해 드립니다.
+모은 열쇠로 상자를 열면 POINT를 받을 수 있습니다. (`라라야 상자` 입력)
 
-※ 개근 보상을 받을 때 `💎Premium` 역할을 보유하고 있다면 POINT가 추가로 지급됩니다! (자세한 사항은 <#585653003122507796> 를 확인해주세요.)"""
+※ `💎Premium` 역할을 갖고 있으면 상자를 열 때 필요한 열쇠가 줄어듭니다. (<#585653003122507796> 확인)"""
+        )
+
+    async def select_box(self, ctx: commands.Context) -> str:
+        """
+        사용자의 입력에 따라 TimeoutError 또는 KeyError가 발생할 수 있습니다.
+        """
+        is_premium = self.is_premium(ctx)
+        description = "\n".join(
+            describe_box(box, is_premium) for box in box_types.values()
+        )
+        embed = Embed(title="어떤 상자를 열어볼까요?", description=description)
+
+        prompt = await ctx.send(ctx.author.mention, embed=embed)
+        emoji_map = {box["emoji"]: key for key, box in box_types.items()}
+        user_input = await interface.input_emojis(ctx, prompt, [*emoji_map.keys(), "❌"])
+        return emoji_map[user_input]
+
+    @commands.command("상자", brief="열쇠를 사용하여 상자를 열고 확률적으로 포인트를 받습니다.")
+    async def unpack_box(self, ctx):
+        key_count = await api.get_key_count(ctx.author.id)
+        if key_count == 0:
+            await ctx.send(
+                f"{ctx.author.mention}, 상자를 열 수 있는 열쇠가 없습니다.\n"
+                + "`라라야 출석` 명령어로 매일 열쇠를 하나씩 얻을 수 있습니다."
             )
-        elif status == "regular":
-            bonus_description = "(`💎Premium` 보유 보너스 포함)" if is_premium else ""
-            return await ctx.send(
-                f"""{ctx.author.mention}, 💝 **출석 성공!**
+            return
 
-축하드립니다! {FULL}일 누적으로 출석체크에 성공하여 개근 보상을 획득했습니다.
+        box_type = await self.select_box(ctx)
 
-> `{attendance['point']}` POINT {bonus_description}
-"""
-            )
+        prompt = await ctx.send(
+            ctx.author.mention,
+            embed=box_open_view(box_types[box_type], self.is_premium(ctx), key_count),
+        )
+        if await interface.is_confirmed(ctx, prompt):
+            await prompt.edit(content=f"{ctx.author.mention}, **{box_types[box_type]['name']}**를 여는 중...", embed=None)
+            try:
+                point, remaining_keys = await api.unpack_box(
+                    ctx.author.id, box_type, self.is_premium(ctx)
+                )
+                self.logger.info(f"{ctx.author.id} unpack success, {box_type}, point = {point}, key_count = {remaining_keys}")
+                await ctx.send(f"{ctx.author.mention}, 상자를 열어 **{point}P**를 얻었습니다! (남은 열쇠: **{remaining_keys}개**)")
+            except api.AttendanceError as e:
+                self.logger.log(e.level, f"{ctx.author.id} unpack failure, {e.status}")
+                return await ctx.send(f"{ctx.author.mention}, {e}")
 
     @commands.command("구독", brief="전용 구독자 역할을 지급받거나 반환합니다.")
     async def subscribe(self, ctx):
