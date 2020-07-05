@@ -35,7 +35,7 @@ class User(commands.Cog):
         user, _ = await request("get", f"/discords/{ctx.author.id}")
         if len(user) == 0:
             return await ctx.send(
-                f"""{ctx.author.mention}, ⚠️ 팀 크레센도 FOTRE에 가입하지 않은 계정입니다.
+                f"""{ctx.author.mention}, ⚠️ 팀 크레센도 FORTE에 가입하지 않은 계정입니다.
 출석체크 및 개근 보상으로 POINT를 지급받기 위해선 FORTE 가입이 필요합니다.
 하단의 링크에서 Discord 계정 연동을 통해 가입해주세요.
 > https://forte.team-crescendo.me/login/discord"""
@@ -67,7 +67,9 @@ class User(commands.Cog):
 
         FULL = 7
         if status == "success":
-            progress = ("❤️" * attendance["stack"]) + ("🖤" * (FULL - attendance["stack"]))
+            progress = ("❤️" * attendance["stack"]) + (
+                "🖤" * (FULL - attendance["stack"])
+            )
             return await ctx.send(
                 f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
 
