@@ -29,68 +29,16 @@ class User(commands.Cog):
         self.logger.error(str(error))
 
     @commands.command(
-        "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석하고 포인트 보상을 받습니다.",
+        "출석", aliases=["출석체크", "출첵", "ㅊ"], brief="팀 크레센도 디스코드 서버에 출석합니다.",
     )
     async def attend(self, ctx):
-        user, _ = await request("get", f"/discords/{ctx.author.id}")
-        if len(user) == 0:
-            return await ctx.send(
-                f"""{ctx.author.mention}, ⚠️ 팀 크레센도 FORTE에 가입하지 않은 계정입니다.
-출석체크 및 개근 보상으로 POINT를 지급받기 위해선 FORTE 가입이 필요합니다.
-하단의 링크에서 Discord 계정 연동을 통해 가입해주세요.
-> https://forte.team-crescendo.me/login/discord"""
-            )
+        await ctx.send(
+            f"""{ctx.author.mention}, 출석해주셔서 감사합니다. 🙌
 
-        role = ctx.guild.get_role(int(os.getenv("PREMIUM_ROLE")))
-        is_premium = int(role in ctx.author.roles)
+아쉽지만 `팀 크레센도 디스코드에서 출석하고 무료 POINT를 얻자!` 이벤트는 종료됐습니다.
 
-        attendance, _ = await request(
-            "post", f"/discords/{ctx.author.id}/attendances?isPremium={is_premium}"
+팀 크레센도에서 🌟 **새로운 출석 이벤트**를 야심차게 준비하고 있으니, 조금만 기다려주세요!"""
         )
-
-        if attendance.get("error"):
-            self.logger.warning(f"failed to check attendance of {ctx.author.id}")
-            return await ctx.send(
-                f"{ctx.author.mention}, 🔥 에러가 발생했습니다. 잠시 후 다시 시도해주세요."
-            )
-
-        status = attendance.get("status")
-        self.logger.info(
-            f"attendance check of {ctx.author.id}"
-            + (", premium user" if is_premium else "")
-            + f": {status}"
-        )
-        if status == "exist_attendance":
-            return await ctx.send(
-                f"{ctx.author.mention}, 최근에 이미 출석체크 하셨습니다.\n`{attendance.get('diff')}` 후 다시 시도해주세요."
-            )
-
-        FULL = 7
-        if status == "success":
-            progress = ("❤️" * attendance["stack"]) + (
-                "🖤" * (FULL - attendance["stack"])
-            )
-            return await ctx.send(
-                f"""{ctx.author.mention}, ⚡ **출석 체크 완료!**
-
-개근까지 앞으로 {FULL - attendance['stack']}일 남았습니다. 내일 또 만나요!
-
-{progress}
-
-__7일 누적으로__ 출석하면 출석 보상으로 FORTE STORE(포르테 스토어)에서 사용할 수 있는 POINT를 지급해 드립니다.
-
-※ 개근 보상을 받을 때 `💎Premium` 역할을 보유하고 있다면 POINT가 추가로 지급됩니다! (자세한 사항은 <#585653003122507796> 를 확인해주세요.)"""
-            )
-        elif status == "regular":
-            bonus_description = "(`💎Premium` 보유 보너스 포함)" if is_premium else ""
-            return await ctx.send(
-                f"""{ctx.author.mention}, 💝 **출석 성공!**
-
-축하드립니다! {FULL}일 누적으로 출석체크에 성공하여 개근 보상을 획득했습니다.
-
-> `{attendance['point']}` POINT {bonus_description}
-"""
-            )
 
     @commands.command("구독", brief="전용 구독자 역할을 지급받거나 반환합니다.")
     async def subscribe(self, ctx):
