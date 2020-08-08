@@ -7,8 +7,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import api
-from api import request
 import interface
+from api import request
 
 load_dotenv(verbose=True, override=True)
 
@@ -145,13 +145,20 @@ class User(commands.Cog):
             embed=box_open_view(box_types[box_type], self.is_premium(ctx), key_count),
         )
         if await interface.is_confirmed(ctx, prompt):
-            await prompt.edit(content=f"{ctx.author.mention}, **{box_types[box_type]['name']}**를 여는 중...", embed=None)
+            await prompt.edit(
+                content=f"{ctx.author.mention}, **{box_types[box_type]['name']}**를 여는 중...",
+                embed=None,
+            )
             try:
                 point, remaining_keys = await api.unpack_box(
                     ctx.author.id, box_type, self.is_premium(ctx)
                 )
-                self.logger.info(f"{ctx.author.id} unpack success, {box_type}, point = {point}, key_count = {remaining_keys}")
-                await ctx.send(f"{ctx.author.mention}, 상자를 열어 **{point}P**를 얻었습니다! (남은 열쇠: **{remaining_keys}개**)")
+                self.logger.info(
+                    f"{ctx.author.id} unpack success, {box_type}, point = {point}, key_count = {remaining_keys}"
+                )
+                await ctx.send(
+                    f"{ctx.author.mention}, 상자를 열어 **{point}P**를 얻었습니다! (남은 열쇠: **{remaining_keys}개**)"
+                )
             except api.AttendanceError as e:
                 self.logger.log(e.level, f"{ctx.author.id} unpack failure, {e.status}")
                 return await ctx.send(f"{ctx.author.mention}, {e}")
