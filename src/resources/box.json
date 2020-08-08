@@ -1,0 +1,64 @@
+{
+  "bronze": {
+    "name": "브론즈 상자",
+    "image": "https://cdn.discordapp.com/attachments/600648727769645056/729320158304141322/364da0bc80fb0071.png",
+    "emoji": "🥉",
+    "key": 3,
+    "probabilities": [
+      {
+        "prob": 0.69,
+        "point": 3
+      },
+      {
+        "prob": 0.24,
+        "point": 10
+      },
+      {
+        "prob": 0.07,
+        "point": 20
+      }
+    ]
+  },
+  "silver": {
+    "name": "실버 상자",
+    "image": "https://cdn.discordapp.com/attachments/600648727769645056/729320156110782464/da47e19520e03cc4.png",
+    "emoji": "🥈",
+    "key": 6,
+    "key_premium": 5,
+    "probabilities": [
+      {
+        "prob": 0.70,
+        "point": 10
+      },
+      {
+        "prob": 0.25,
+        "point": 30
+      },
+      {
+        "prob": 0.05,
+        "point": 50
+      }
+    ]
+  },
+  "gold": {
+    "name": "골드 상자",
+    "image": "https://cdn.discordapp.com/attachments/600648727769645056/729320157238919258/ce191f3e10176c3a.png",
+    "emoji": "🥇",
+    "key": 10,
+    "key_premium": 8,
+    "probabilities": [
+      {
+        "prob": 0.71,
+        "point": 20
+      },
+      {
+        "prob": 0.26,
+        "point": 60
+      },
+      {
+        "prob": 0.03,
+        "point": 100
+      }
+    ]
+  }
+}
