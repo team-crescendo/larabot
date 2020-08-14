@@ -128,7 +128,9 @@ class User(commands.Cog):
         user_input = await interface.input_emojis(ctx, prompt, [*emoji_map.keys(), "❌"])
         return emoji_map[user_input]
 
-    @commands.command("상자", brief="열쇠를 사용하여 상자를 열고 확률적으로 포인트를 받습니다.")
+    @commands.command(
+        "상자", aliases=["ㅅ"], brief="열쇠를 사용하여 상자를 열고 확률적으로 포인트를 받습니다."
+    )
     async def unpack_box(self, ctx):
         key_count = await api.get_key_count(ctx.author.id)
         if key_count == 0:
