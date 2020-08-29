@@ -110,7 +110,7 @@ class User(commands.Cog):
 
 모은 열쇠로 상자를 열면 POINT를 받을 수 있습니다. (`라라야 상자` 입력)
 
-※ `💎Premium` 역할을 갖고 있으면 상자를 열 때 필요한 열쇠가 줄어듭니다. (<#585653003122507796> 확인)"""
+※ `💎Premium` 역할을 갖고 있으면 상자를 열 때 필요한 열쇠가 줄어듭니다. (<#748566390528671774> 확인)"""
         )
 
     async def select_box(self, ctx: commands.Context) -> str:
