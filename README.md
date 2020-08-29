@@ -15,6 +15,8 @@
 `requirements.txt` 파일에 정의된 의존 패키지들을 설치해주세요.
 
 ### 3. 챗봇 실행하기
-```
-$ python src/bot.py
+
+```sh
+$ ./deploy.sh
+appending output to nohup.out
 ```
