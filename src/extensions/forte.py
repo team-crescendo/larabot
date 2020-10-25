@@ -108,6 +108,26 @@ class Forte(commands.Cog):
         )
         await ctx.send(f"포인트 지급에 성공했습니다! (영수증 ID: {receipt_id})")
 
+    @forte.command(aliases=["토큰"], brief="토큰 리프레시")
+    async def refresh(self, ctx, clientId: str):
+        message = await ctx.send(content=f"{clientId}의 토큰을 리프레시 합니다.")
 
+        if not await interface.is_confirmed(ctx, message):
+            return await ctx.send(f"{ctx.author.mention} 취소되었습니다.")
+
+        result, resp = await request(
+            "post", f"/clients/{clientId}/refresh"
+        )
+
+        if resp.status // 100 == 4:
+            message = result.get("message", "Unknown Error")
+            return await ctx.send(f"토큰 리프레시에 실패했습니다: {message}")
+
+        token = result.get('token')
+
+        self.logger.info(
+            f"refresh token of {clientId} to {token} by {ctx.author.id}"
+        )
+        await ctx.send(f"토큰 리프레시에 성공했습니다!\n`{result.get('token')}`")
 def setup(bot):
     bot.add_cog(Forte(bot))
