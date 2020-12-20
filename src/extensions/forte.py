@@ -1,13 +1,13 @@
+import asyncio
 import logging
 import os
 import re
 
 import discord
-from discord.ext import commands
-from dotenv import load_dotenv
-import asyncio
 import interface
 from api import request
+from discord.ext import commands
+from dotenv import load_dotenv
 
 load_dotenv(verbose=True, override=True)
 
@@ -59,7 +59,6 @@ class Forte(commands.Cog):
         if admin_role_env is None:
             raise ValueError("Environment variable ADMIN_ROLE is not defined")
         self.admin_role = int(admin_role_env)
-
 
     async def cog_check(self, ctx):
         if ctx.guild is None:
@@ -122,25 +121,23 @@ class Forte(commands.Cog):
             "get", f"/users/{user['id']}/items/{msg.content}"
         )
 
-        if result['expired'] == 1:
-            pointresult, resp = await request(
-                "post", f"/users/{user['id']}/points",json={"points": result['price']}
-            )
-            if resp.status // 100 == 4:
-                message = result.get("message", "Unknown Error")
-                return await message.edit(content=f"아이템 삭제는 완료되었으나, 포인트 지급에 실패했습니다: {message}\n")
-
-            receipt_id = pointresult.get("receipt_id", -1)
-            embed = ForteUser.to_embed(user)
-            pointresult, resp = await request("get", f"/users/{user['id']}")
-            embed.add_field(name="청약철회 이후 포인트",value=f"{int(pointresult['points'])+int(result['price'])}<:fortepoint:788766295406542868>")
-            embed.add_field(name="청약철회 정보",value=f"ID: `{msg.content}`\n아이템명: `{result['name']}`\n환불금액: `{result['price']}`<:fortepoint:788766295406542868>\n영수증 ID: `{receipt_id}`",inline=False)
-
-            await message.edit(content=f"청약철회 완료!",embed=embed)
-        if result['expried'] == 0:
+        if result['expired'] != 1:
             return await message.edit(content="아이템 삭제처리가 완료되지 않았습니다. 청약철회 처리를 취소합니다.")
 
+        pointresult, resp = await request(
+            "post", f"/users/{user['id']}/points", json={"points": result['price']}
+        )
+        if resp.status // 100 == 4:
+            message = result.get("message", "Unknown Error")
+            return await message.edit(content=f"아이템 삭제는 완료되었으나, 포인트 지급에 실패했습니다: {message}\n")
 
+        receipt_id = pointresult.get("receipt_id", -1)
+        embed = ForteUser.to_embed(user)
+        pointresult, resp = await request("get", f"/users/{user['id']}")
+        embed.add_field(name="청약철회 이후 포인트",value=f"{int(pointresult['points'])+int(result['price'])}<:fortepoint:788766295406542868>")
+        embed.add_field(name="청약철회 정보",value=f"ID: `{msg.content}`\n아이템명: `{result['name']}`\n환불금액: `{result['price']}`<:fortepoint:788766295406542868>\n영수증 ID: `{receipt_id}`",inline=False)
+
+        await message.edit(content=f"청약철회 완료!",embed=embed)
 
     @forte.command(aliases=["사용자"], brief="포르테 이용자 정보를 확인합니다.")
     async def user(self, ctx, user: ForteUser):
@@ -190,5 +187,7 @@ class Forte(commands.Cog):
             f"refresh token of {clientId} to {token} by {ctx.author.id}"
         )
         await ctx.send(f"토큰 리프레시에 성공했습니다!\n`{result.get('token')}`")
+
+
 def setup(bot):
     bot.add_cog(Forte(bot))
